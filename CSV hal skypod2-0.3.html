@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graphique CSV</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+                body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #007bff;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+                .block {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .block h2 {
+            margin-top: 0;
+            color: #007bff;
+        }
+
+                .inline-form {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .inline-form > div {
+            margin-right: 20px;
+            margin-bottom: 10px;
+        }
+
+        label {
+            margin-right: 5px;
+        }
+
+        select,
+        input[type="file"],
+        button {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+                #error {
+            color: red;
+            margin-top: 10px;
+        }
+
+        #message {
+            color: green;
+            margin-top: 10px;
+        }
+
+                #graphContainer {
+            margin-top: 30px;
+        }
+        
+                .chart-controls {
+            display: flex;
+            align-items: center;
+        }
+
+        .chart-controls > div {
+            margin-right: 20px;
+        }
+        .axis-selection {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.axis-selection > div {
+    flex: 1;
+    min-width: 0;
+    margin-right: 10px;
+}
+
+.axis-selection select {
+    width: 100%;
+    min-width: 0;
+}
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CSV Hal Skypod II</h1>
+
+                <div class="block">
+            <h2>Chargement du fichier CSV</h2>
+            <input type="file" id="csvFile" accept=".csv">
+            <button onclick="loadCSV()">Charger CSV</button>
+            <div id="error"></div>
+            <div id="message"></div>
+        </div>
+
+<div class="block">
+    <h2>Choix des axes</h2>
+    <div class="axis-selection">
+        <div>
+            <label for="xAxis">Colonne X :</label>
+            <select id="xAxis">
+                <option value="">timestamp</option>
+            </select>
+        </div>
+        <div>
+            <label for="yAxis1">Colonne Y 1 :</label>
+            <select id="yAxis1">
+                <option value="">Aucune</option>
+            </select>
+        </div>
+        <div>
+            <label for="yAxis2">Colonne Y 2 :</label>
+            <select id="yAxis2">
+                <option value="">Aucune</option>
+            </select>
+        </div>
+        <div>
+            <label for="yAxis3">Colonne Y 3 :</label>
+            <select id="yAxis3">
+                <option value="">Aucune</option>
+            </select>
+        </div>
+        <div>
+            <label for="yAxis4">Colonne Y 4 :</label>
+            <select id="yAxis4">
+                <option value="">Aucune</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+            <div class="block">
+            <h2>Génération du graphique</h2>
+            <div class="chart-controls">
+                <div>
+                    <label for="chartType">Type de graphique :</label>
+                    <select id="chartType">
+                        <option value="scatter">Nuage de points</option>
+                        <option value="bar">Graphique en barres</option>
+                        <option value="line">Graphique en lignes</option>
+                    </select>
+                </div>
+                <button onclick="generateGraph()">Générer Graphique</button>
+            </div>
+            <div id="graphContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        let csvData = [];
+        const headers = ["timestamp","time_epoch","halLeftDrivingSpeedCmd","halRightDrivingSpeedCmd","halLeftDrivingSpeedMeasure","halRightDrivingSpeedMeasure","halLeftDrivingCurrent","halRightDrivingCurrent","halLeftDrivingPosition","halRightDrivingPosition","halLeftDrivingMotorTemperature","halRightDrivingMotorTemperature","halLeftClimbingCurrent","halRightClimbingCurrent","halLeftClimbingPosition","halRightClimbingPosition","halLeftClimbingMotorTemperature","halRightClimbingMotorTemperature","halForkPosition","halForkCurrent","halEngagePosition","halEngageTargetCurrent","halEngageCurrent","halPasserineCurrent","halRightClimbingSpeedFromUc","halLeftClimbingTargetPosition","halRightClimbingTargetPosition","halForkTargetPosition","halEngageTargetPosition","halLeftDrivingMotorI2T","halLeftDrivingEposI2T","halRightDrivingMotorI2T","halRightDrivingEposI2T","halLeftClimbingMotorI2T","halLeftClimbingEposI2T","halRightClimbingMotorI2T","halRightClimbingEposI2T","halForkMotorI2T","halForkEposI2T","halForkLeftBinDistance","halForkRightBinDistance","halSteeringSWPosition","halSteeringNWPosition","halSteeringNEPosition","halSteeringSEPosition","halSteeringSWTargetPosition","halSteeringNWTargetPosition","halSteeringNETargetPosition","halSteeringSETargetPosition","halLineSensorSPosition","halLineSensorWPosition","halLineSensorNPosition","halLineSensorEPosition","halLineSensorSMeasuredPosition","halLineSensorWMeasuredPosition","halLineSensorNMeasuredPosition","halLineSensorEMeasuredPosition","halLineSensorSVisible","halLineSensorWVisible","halLineSensorNVisible","halLineSensorEVisible","halLineSensorSLLH","halLineSensorWLLH","halLineSensorNLLH","halLineSensorELLH","halLineSensorSTOFDistance","halLineSensorWTOFDistance","halLineSensorNTOFDistance","halLineSensorETOFDistance","halLineSensorSOutlier","halLineSensorWOutlier","halLineSensorNOutlier","halLineSensorEOutlier","halLineSensorSHole","halLineSensorWHole","halLineSensorNHole","halLineSensorEHole","halLineSensorSErrorCode","halLineSensorWErrorCode","halLineSensorNErrorCode","halLineSensorEErrorCode","halLineSensorSisRackLine","halLineSensorWisRackLine","halLineSensorNisRackLine","halLineSensorEisRackLine","halRangingSDistance","halRangingWDistance","halRangingEDistance","halRangingNDistance","halRightDrivingBrakeVoltageFeedback","halRightDrivingSupplyVoltage","halRightDrivingSupplyCurrent","halRightClimbingBrakeVoltageFeedback","halRightClimbingSupplyVoltage","halRightClimbingSupplyCurrent","halRightClimbingRRFState","halLeftClimbingBrakeVoltageFeedback","halLeftClimbingSupplyVoltage","halLeftClimbingSupplyCurrent","halLeftClimbingRRFState","halRightDrivingVelocity","halRightClimbingVelocity","halLeftClimbingVelocity","halEngageTemperature","halFloorSensorSTOFAge","halFloorSensorWTOFAge","halFloorSensorNTOFAge","halFloorSensorETOFAge","halAccelerometerXValue","halAccelerometerYValue","halAccelerometerZValue"];
+
+        function loadCSV() {
+            const file = document.getElementById("csvFile").files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                try {
+                    const text = event.target.result;
+                    csvData = text.split('\n').map(row => row.split(','));
+
+                    if (csvData.length === 0) throw new Error("Le fichier est vide.");
+                    csvData[0] = headers; // Remplacer les en-têtes par ceux spécifiés
+                    populateSelect(headers, 'xAxis');
+                    populateSelect(headers, 'yAxis1', true);
+                    populateSelect(headers, 'yAxis2', true);
+                    populateSelect(headers, 'yAxis3', true);
+                    populateSelect(headers, 'yAxis4', true);
+                    document.getElementById('message').textContent = "Fichier CSV chargé avec succès.";
+                    document.getElementById('error').textContent = "";
+                } catch (error) {
+                    document.getElementById('error').textContent = "Erreur lors du chargement du fichier CSV: " + error.message;
+                    document.getElementById('message').textContent = "";
+                }
+            };
+
+            reader.onerror = function() {
+                document.getElementById('error').textContent = "Erreur lors de la lecture du fichier.";
+                document.getElementById('message').textContent = "";
+            };
+
+            reader.readAsText(file);
+        }
+
+        function populateSelect(options, selectId, includeEmptyOption = false) {
+            const select = document.getElementById(selectId);
+            select.innerHTML = '';
+            if (includeEmptyOption) {
+                const emptyOpt = document.createElement('option');
+                emptyOpt.value = '';
+                emptyOpt.innerHTML = 'Aucune';
+                select.appendChild(emptyOpt);
+            }
+            options.forEach(option => {
+                const opt = document.createElement('option');
+                opt.value = option;
+                opt.innerHTML = option;
+                select.appendChild(opt);
+            });
+        }
+
+        function generateGraph() {
+            const xAxis = document.getElementById('xAxis').value;
+            const yAxis1 = document.getElementById('yAxis1').value;
+            const yAxis2 = document.getElementById('yAxis2').value;
+            const yAxis3 = document.getElementById('yAxis3').value;
+            const yAxis4 = document.getElementById('yAxis4').value;
+            const chartType = document.getElementById('chartType').value;
+
+            const xIndex = csvData[0].indexOf(xAxis);
+
+            const yAxes = [yAxis1, yAxis2, yAxis3, yAxis4].filter(Boolean);
+
+            const data = yAxes.map((yAxis, index) => {
+                const yIndex = csvData[0].indexOf(yAxis);
+                const xData = csvData.slice(1).map(row => row[xIndex]);
+                const yData = csvData.slice(1).map(row => row[yIndex]);
+                const colors = ['#FF5733', '#33FF57', '#3357FF', '#FF33A8', '#A833FF'];
+
+                return {
+                    x: xData,
+                    y: yData,
+                    mode: chartType === 'scatter' ? 'lines+markers' : '',
+                    type: chartType,
+                    marker: { color: colors[index % colors.length] },
+                    name: yAxis
+                };
+            });
+
+            const layout = {
+                title: 'Graphique CSV',
+                xaxis: { title: xAxis },
+                yaxis: { title: 'Valeurs' },
+                height: 900
+            };
+
+            Plotly.newPlot('graphContainer', data, layout);
+        }
+    </script>
+</body>
+</html>
